@@ -30,6 +30,7 @@ modPix:
 	mov rax, rdx
 	ret
 
+; Calculates %1 % %2. Result in rax.
 %macro modulo 2
 	push rdi
 	push rsi
@@ -99,7 +100,7 @@ sum1Pix:
 
 
 
-; Computes the second sum (16 ^ (n-k) mod 8 k + j ...) in the last line of the tutorial (as above).
+; Computes the second sum (16 ^ (n-k) mod 8 k + j ...) in the last line of the tutorial (see above).
 ; uint64_t sum2Pix(uint64_t n, uint64_t j)
 ; rdi - n
 ; rsi - j
@@ -108,10 +109,61 @@ sum2Pix:
 	ret
 
 
+; Computes {16^n * S_j} for the blue equation from the tutorial (see above).
+; %1 - j
+; %2 - n
+; %3 (temporarily in rax) - result
+%macro computeSj 3
+	push %2
+	xor rax, rax ; We'll store the result here
+	
+	
+	xor r8, r8 ; k
+; for (k = 0; k <= n; ++k)
+%%computeSjLoop: 
+	cmp r8, %2 ; if (k == n) break
+	je %%endComputeSjLoop
+	
+	
+	jmp %%computeSjLoop
+%%endComputeSjLoop:
 
+	mov %3, rax
+	pop %2
+%endmacro
+
+
+
+; Computes {16^n * pi} from the blue equation from the tutorial (see above).
+; uint64_t pixPi(uint64_t n)
 ; rdi - n
 ; rax - result
 pixPi:
+	push r12
+	push r13
+	push r14
+	push r15
+	
+	computeSj 1, rdi, r12 ; S1
+	computeSj 4, rdi, r13 ; S4
+	computeSj 5, rdi, r14 ; S5
+	computeSj 6, rdi, r15 ; S6
+	
+	; ??? Co tutaj z wychodzeniem ponizej zera i powyzej overflowa?
+	xor rax, rax
+	add rax, r12 ; += S1
+	add rax, r12 ; += S1
+	sub rax, r13 ; -= S4
+	sub rax, r13 ; -= S4
+	add rax, r12 ; += S1
+	add rax, r12 ; += S1
+	sub rax, r14 ; -= S5
+	sub rax, r15 ; -= S6
+	
+	pop r12
+	pop r13
+	pop r14
+	pop r15
 	ret
 
 
