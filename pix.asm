@@ -39,18 +39,17 @@ section .text
 
 ; Computes (value ^ power) % modulus. Uses the fast exponentiation algorithm.
 ; %1 - value (64 bit)
-; %2 (rbx for convenience) - power (64 bit)
+; %2 - power (64 bit)
 ; %3 - modulus (64 bit)
 ; rax - result (64 bit)  - Auxiliarily we'll use rdx:rax (128 bit), but on return rdx will be discarded.
 %macro power 3
-	mov rbx, %2 ; power
 	mov rax, 1 ; result = 1
 	
 %%powerLoop:
-	cmp rbx, 0 ; if (power == 0) break
+	cmp %2, 0 ; if (power == 0) break
 	je %%endPowerLoop
 	
-	test bl, 1 ; if (power is odd) {
+	test %2, 1 ; if (power is odd) {
 	jz %%skipPowerIf
 	mul %1 ; result (rdx:rax) = result * value
 	modulo %3 ; result (rdx:rax) %= modulus }
@@ -63,18 +62,19 @@ section .text
 	mov %1, rax
 	pop rax ; retrieve result
 	
-	shr rbx, 1 ; power /= 2
+	shr %2, 1 ; power /= 2
 	jmp %%powerLoop
 %%endPowerLoop:
 %endmacro
 
-; TEST: - floating point exception (core dumped)
 powPix:
-	push rbx
+	push r12
 	mov r12, rdx
 	power rdi, rsi, r12
-	pop rbx
+	pop r12
 	ret
+
+; TODO: zmien r12 tutaj
 
 
 ; Computes { value1 * value2 }, where value1 and value 2 are also fractional parts.
