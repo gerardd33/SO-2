@@ -24,6 +24,10 @@ section .text
 ; rsi - modulus
 ; rax - result
 modPix:
+	mov rax, rdi
+	xor rdx, rdx
+	div rsi
+	mov rax, rdx
 	ret
 
 
