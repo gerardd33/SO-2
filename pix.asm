@@ -45,14 +45,13 @@ section .text
 %macro power 3
 	mov rbx, %2 ; power
 	mov rax, 1 ; result = 1
-	xor rdx, rdx
 	
 %%powerLoop:
 	cmp rbx, 0 ; if (power == 0) break
 	je %%endPowerLoop
 	
 	test bl, 1 ; if (power is odd) {
-	jne %%skipPowerIf
+	jz %%skipPowerIf
 	mul %1 ; result (rdx:rax) = result * value
 	modulo %3 ; result (rdx:rax) %= modulus }
 %%skipPowerIf: 
@@ -72,7 +71,8 @@ section .text
 ; TEST: - floating point exception (core dumped)
 powPix:
 	push rbx
-	power rdi, rsi, rdx
+	mov r12, rdx
+	power rdi, rsi, r12
 	pop rbx
 	ret
 
@@ -96,12 +96,24 @@ powPix:
 %macro nthPi 1
 	computeSj 1, %1 ; S1
 	mov r12, rax
+	push r12
+	
 	computeSj 4, %1; S4
 	mov r13, rax
+	push r13
+	
 	computeSj 5, %1 ; S5
 	mov r14, rax
+	push r14
+	
 	computeSj 6, %1 ; S6
 	mov r15, rax
+	push r15
+	
+	pop r15
+	pop r14
+	pop r13
+	pop r12
 	
 	; ??? Co tutaj z wychodzeniem ponizej zera i powyzej overflowa?
 	xor rax, rax
@@ -186,16 +198,15 @@ powPix:
 	jmp %%computeSjLoop2
 %%endComputeSjLoop2
 	
-	
 	pop %2
 	mov rax, rbp
 %endmacro
 
 
 ; Main function. Writes to the array.
-; %1 - Pointer to the ppi array
-; %2 - Pointer to the pidx index
-; %3 - The max value
+; %1 - Pointer to the ppi array (32 bit*)
+; %2 - Pointer to the pidx index (64 bit*)
+; %3 - The max value (64 bit)
 %macro mainPix 3
 %%mainPixLoop:
 	cmp [%2], %3 ; if (*pidx >= max) break
