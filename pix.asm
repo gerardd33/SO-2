@@ -10,81 +10,69 @@ global pix
 
 
 
-section .bss
-
 
 
 section .text
 
+; Computes { numerator / denominator }.
+; %1 - numerator (64 bit)
+; %2 - denominator (64 bit)
+; rax - result (64 bit)
+%macro divFractionalPart 2
+	mov rax, %1
+	; We'll now consider numerator a 128-bit value on rdx:rax
+	mov rdx, rax ; numerator <<= 64 (*= 2 ^ 64)
+	div %2
+%endmacro
 
 
-; Computes value % modulus
-; uint64_t modPix(uint64_t a, uint64_t mod)
-; rdi - value
-; rsi - modulus
-; rax - result
-modPix:
-	mov rax, rdi
-	xor rdx, rdx
-	div rsi ; rax / rsi, result in rax, remainder in rdx
+; Calculates value % modulus. 
+; rdx:rax - value (128 bit) OR rax - value (64 bit) -
+; - in the latter case, do "xor rdx, rdx" before using the function
+; %1 - modulus (64 bit)
+; rax - result (64 bit)
+%macro modulo 1
+	div %1
 	mov rax, rdx
-	ret
-
-; Calculates %1 % %2. Result in rax.
-%macro modulo 2
-	push rdi
-	push rsi
-	
-	mov rdi, %1
-	mov rsi, %2
-	call modPix
-	
-	pop rdi
-	pop rsi
 %endmacro
 
 
 ; Computes (value ^ power) % modulus. Uses the fast exponentiation algorithm.
-; uint64_t powPix(uint64_t a, uint64_t pow, uint64_t mod)
-; rdi - value
-; rsi (moved to rbx) - power
-; rdx - modulus
-; rax - result
-powPix:
-%ifdef COMMENT
-	push rbx
-	mov rbx, rsi 
-	
+; %1 - value (64 bit)
+; %2 (rbx for convenience) - power (64 bit)
+; %3 - modulus (64 bit)
+; rax - result (64 bit)  - Auxiliarily we'll use rdx:rax (128 bit), but on return rdx will be discarded.
+%macro power 3
+	mov rbx, %2 ; power
 	mov rax, 1 ; result = 1
 	
-powLoop:
+%%powerLoop:
 	cmp rbx, 0 ; if (power == 0) break
-	je endPowLoop
+	je %%endPowerLoop
 	
 	test bl, 1 ; if (power is odd) {
-	jne skipPowIf
-	; result = (result * value) % modulus }
-	mul rdi ; result (rax) *= value 
-	; The result of mul is stored in RDX:RAX
-	modulo rax, rdx ; result %= modulus
-skipPowIf:
-	
-	; value = (value * value) % modulus
-	push rax
-	mov rax, rdi
-	mul rax
-	modulo rax, rdx ; rax %= modulus
-	mov rdi, rax ; We want the updated value back in rdi
-	pop rax
+	jne %%skipPowerIf
+	mul %1 ; result (rdx:rax) = result * value
+	modulo %3 ; result (rdx:rax) %= modulus }
+%%skipPowerIf: 
+
+	push rax ; store result temporarily
+	mov rax, %1
+	mul %1 ; value (now on rdx:rax) = value * value 
+	modulo %3 ; value (rdx:rax) %= modulus
+	mov %1, rax
+	pop rax ; retrieve result
 	
 	shr rbx, 1 ; power /= 2
-	jmp powLoop
-endPowLoop:
-	
-	modulo rax, rdx ; result %= modulus
-	pop rbx
-%endif
-	ret
+	jmp %%powerLoop
+%%endPowerLoop:
+
+%endmacro
+
+
+
+
+
 
 
 ; From the tutorial on how to use BBP Formula to calculate the nth pi digit:
@@ -107,6 +95,9 @@ sum1Pix:
 ; rax - result
 sum2Pix:
 	ret
+
+	
+
 
 
 ; Computes {16^n * S_j} for the blue equation from the tutorial (see above).
@@ -184,6 +175,7 @@ pwPix:
 align 8 ; TODO: usun jak bedzie dzialac bez
 pix:
 	ret
+
 
 
 
