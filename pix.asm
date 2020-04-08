@@ -67,15 +67,6 @@ section .text
 %%endPowerLoop:
 %endmacro
 
-powPix:
-	push r12
-	mov r12, rdx
-	power rdi, rsi, r12
-	pop r12
-	ret
-
-; TODO: zmien r12 tutaj
-
 
 ; Computes { value1 * value2 }, where value1 and value 2 are also fractional parts.
 ; %1 - value1 (64 bit)
@@ -98,11 +89,13 @@ powPix:
 	xor r14, r14 ; result = 0
 	
 	computeSj 1, %1 ; S1
-	mul 4
+	mov rbx, 4
+	mul rbx
 	add r14, rax ; result += 4 * S1
 	
 	computeSj 4, %1 ; S4
-	mul 2
+	mov rbx, 2
+	mul rbx
 	sub r14, rax ; result -= 2 * S4
 	
 	computeSj 5, %1 ; S5
@@ -130,7 +123,8 @@ powPix:
 	
 	; denominator (r9) = 8 * k + j
 	mov rax, r8 
-	mul 8
+	mov rbx, 8
+	mul rbx
 	add rax, %1
 	mov r9, rax
 	
@@ -139,7 +133,8 @@ powPix:
 	add r11, r8
 	
 	; numerator (r10) = 16 ^ (n - k) % denominator
-	power 16, r11, r9
+	mov rbp, 16
+	power rbp, r11, r9
 	mov r10, rax
 	
 	divFractional r10, r9
@@ -161,7 +156,8 @@ powPix:
 	xor r12, r12 ; result = 0
 	
 	; current power of 16 (r11)
-	divFractional 1, 16
+	mov rbx, 16
+	divFractional 1, rbx
 	mov r11, rax
 	
 	; k = n + 1
@@ -170,7 +166,8 @@ powPix:
 %%computeSum2Loop: 
 	; denominator (r9) = 8 * k + j
 	mov rax, r8 
-	mul 8
+	mov rbx, 8
+	mul rbx
 	add rax, %1
 	mov r9, rax
 	
@@ -185,7 +182,8 @@ powPix:
 	add r12, r10 ; result += current term
 	
 	; increment the exponent of current power of 16
-	divFractional 1, 16
+	mov rbx, 16
+	divFractional 1, rbx
 	mov r9, rax
 	mulAllFractional r11, r9 
 	mov r11, rax
@@ -221,7 +219,8 @@ powPix:
 	jae %%endMainPixLoop
 	
 	mov rax, [%2]
-	mul 8
+	mov rbx, 8
+	mul rbx
 	mov r15, rax ; n
 	nthPi r15 ; nthPi(8 * m)
 	
@@ -243,50 +242,69 @@ powPix:
 
 
 
-
-
-
-
+powPix:
+%ifdef COMMENT
+	push r12
+	mov r12, rdx
+	power rdi, rsi, r12
+	pop r12
+%endif
+	ret
+	
+	
 modPix:
-    ; rdi - wartosc
-    ; rsi - modulo
-
-        ; TODO
-
-        ret
-
+%ifdef COMMENT
+	xor rdx, rdx
+	mov rax, rdi
+	modulo rsi
+%endif
+	ret
+	
+	
 sum1Pix:
-; rdi - n
-; rsi - j
-        ; TODO
-
-        ret
-
+	push r12
+	push rbp
+	push rbx
+	computeSum1 rdi, rsi
+	pop rbx
+	pop rbp
+	pop r12
+	ret
+	
+	
 sum2Pix:
-; rdi - n
-; rsi - j
-        ; TODO
-
-        ret
-
+	push r12
+	push rbp
+	push rbx
+	computeSum2 rdi, rsi
+	pop rbx
+	pop rbp
+	pop r12
+	ret
+	
+	
 pixPi:
-; rdi - n
+	push r14
+	push r13
+	push r12
+	push rbp
+	push rbx
+	nthPi rdi
+	pop rbx
+	pop rbp
+	pop r12
+	pop r13
+	pop r14
+	ret
 
-        ; TODO
-
-        ret
 
 ; TODO do wyjebonexa
 align 8
 pwPix:
+	ret
 ; rdi - wskaznik na tablice
 ; rsi - wskaznik na indeks
 ; rdx - wartosc max
-
-        ; TODO
-
-        ret
-
 
 align 8 ; TODO: usun jak bedzie dzialac bez
 pix:
