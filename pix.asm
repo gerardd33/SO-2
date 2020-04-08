@@ -90,17 +90,54 @@ powPix:
 %endmacro
 
 
+; Computes {16^n * S_j} for the blue equation from the tutorial (see above).
+; %1 - j (64 bit)
+; %2 - n (64 bit)
+; rax - result (64 bit)
+%macro computeSj 3
+	push %2
+	xor rax, rax ; We'll store the result here
+	; ...
+	
+	xor r8, r8 ; k
+; for (k = 0; k <= n; ++k)
+%%computeSjLoop: 
+	cmp r8, %2 ; if (k == n) break
+	je %%endComputeSjLoop
+	
+	
+	jmp %%computeSjLoop
+%%endComputeSjLoop:
+
+	mov %3, rax
+	pop %2
+%endmacro
 
 
-
-
-
-
-
-
-
-
-
+; Computes {16^n * pi} from the blue equation from the tutorial (see above).
+; %1 - n (64 bit)
+; rax - result (64 bit)
+%macro nthPi 1
+	computeSj 1, rdi ; S1
+	mov r12, rax
+	computeSj 4, rdi ; S4
+	mov r13, rax
+	computeSj 5, rdi ; S5
+	mov r14, rax
+	computeSj 6, rdi ; S6
+	mov r15, rax
+	
+	; ??? Co tutaj z wychodzeniem ponizej zera i powyzej overflowa?
+	xor rax, rax
+	add rax, r12 ; += S1
+	add rax, r12 ; += S1
+	sub rax, r13 ; -= S4
+	add rax, r12 ; += S1
+	sub rax, r13 ; -= S4
+	add rax, r12 ; += S1
+	sub rax, r14 ; -= S5
+	sub rax, r15 ; -= S6
+%endmacro
 
 
 
