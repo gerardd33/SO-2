@@ -94,13 +94,13 @@ powPix:
 ; %1 - n (64 bit)
 ; rax - result (64 bit)
 %macro nthPi 1
-	computeSj 1, rdi ; S1
+	computeSj 1, %1 ; S1
 	mov r12, rax
-	computeSj 4, rdi ; S4
+	computeSj 4, %1; S4
 	mov r13, rax
-	computeSj 5, rdi ; S5
+	computeSj 5, %1 ; S5
 	mov r14, rax
-	computeSj 6, rdi ; S6
+	computeSj 6, %1 ; S6
 	mov r15, rax
 	
 	; ??? Co tutaj z wychodzeniem ponizej zera i powyzej overflowa?
@@ -192,10 +192,32 @@ powPix:
 %endmacro
 
 
+; Main function. Writes to the array.
+; %1 - Pointer to the ppi array
+; %2 - Pointer to the pidx index
+; %3 - The max value
+%macro mainPix 3
+%%mainPixLoop:
+	cmp [%2], %3 ; if (*pidx >= max) break
+	jae %%endMainPixLoop
+	
+	mov rax, [%2]
+	mul 8
+	mov rbx, rax
+	nthPi rbx ; nthPi(8 * m)
+	
+	mov rbx, [%2]
+	rsh rax, 32 ; result >>= 32
+	mov [%1 + rbx], eax ; ppi[m] = result
+	
+	inc [%2]
+%%endMainPixLoop:
+%endmacro
 
 
-
-
+; !!!
+; TODO: pododawaj na stos wartosci przy zagniezdzonych wywolaniach funkcji
+; i w innych potencjalnie niebezpiecznych miejscach
 
 
 
