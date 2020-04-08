@@ -92,58 +92,41 @@ powPix:
 
 ; Computes {16^n * pi} from the blue equation from the tutorial (see above).
 ; %1 - n (64 bit)
-; rax - result (64 bit)
+; rax (temporarily in r14) - result (64 bit)
 %macro nthPi 1
-	computeSj 1, %1 ; S1
-	mov r12, rax
-	push r12
+	; ??? Co tutaj z wychodzeniem ponizej zera i powyzej overflowa?
+	xor r14, r14 ; result = 0
 	
-	computeSj 4, %1; S4
-	mov r13, rax
-	push r13
+	computeSj 1, %1 ; S1
+	mul 4
+	add r14, rax ; result += 4 * S1
+	
+	computeSj 4, %1 ; S4
+	mul 2
+	sub r14, rax ; result -= 2 * S4
 	
 	computeSj 5, %1 ; S5
-	mov r14, rax
-	push r14
+	sub r14, rax ; result -= S6
 	
 	computeSj 6, %1 ; S6
-	mov r15, rax
-	push r15
+	sub r14, rax ; result -= S6	
 	
-	pop r15
-	pop r14
-	pop r13
-	pop r12
-	
-	; ??? Co tutaj z wychodzeniem ponizej zera i powyzej overflowa?
-	xor rax, rax
-	add rax, r12 ; += S1
-	add rax, r12 ; += S1
-	sub rax, r13 ; -= S4
-	add rax, r12 ; += S1
-	sub rax, r13 ; -= S4
-	add rax, r12 ; += S1
-	sub rax, r14 ; -= S5
-	sub rax, r15 ; -= S6
+	mov rax, r14
 %endmacro
 
 
-; Computes {16^n * S_j} for the blue equation from the tutorial (see above).
+; Computes the first sum from the equation for Sj (see above).
 ; %1 - j (64 bit)
 ; %2 - n (64 bit)
-; rax (rbp for convenience) - result (64 bit)
-%macro computeSj 2
-	push %2
-	xor rbp, rbp ; result
+; rax (temporarily in r12) - result (64 bit)
+%macro computeSum1 2
+	xor r12, r12 ; result = 0
 	
-	; first sum from the equation:
 	xor r8, r8 ; k
-	mov r11, %2 ; tmp (r11) := n - k
-	sub r11, r8
 	; for (k = 0; k <= n; ++k)
-%%computeSjLoop1: 
+%%computeSum1Loop: 
 	cmp r8, %2 ; if (k > n) break
-	ja %%endComputeSjLoop1
+	ja %%endComputeSum1Loop
 	
 	; denominator (r9) = 8 * k + j
 	mov rax, r8 
@@ -151,28 +134,40 @@ powPix:
 	add rax, %1
 	mov r9, rax
 	
+	; tmp (r11) := n - k
+	mov r11, %2
+	add r11, r8
+	
 	; numerator (r10) = 16 ^ (n - k) % denominator
 	power 16, r11, r9
 	mov r10, rax
 	
 	divFractional r10, r9
-	add rbp, rax ; result += { numerator / denominator }
+	add r12, rax ; result += { numerator / denominator }
 	
 	inc r8 ; ++k
-	jmp %%computeSjLoop1
-%%endComputeSjLoop1:
+	jmp %%computeSum1Loop
+%%endComputeSum1Loop:
 	
-	; tmp (r11) := current power of 16
+	mov rax, r12
+%endmacro
+
+
+; Computes the second sum from the equation for Sj (see above).
+; %1 - j (64 bit)
+; %2 - n (64 bit)
+; rax (temporarily in r12) - result (64 bit)
+%macro computeSum2 2
+	xor r12, r12 ; result = 0
+	
+	; current power of 16 (r11)
 	divFractional 1, 16
 	mov r11, rax
 	
-	; second sum from the equation:
 	; k = n + 1
 	mov r8, %2 
 	inc r8 
-%%computeSjLoop2: 
-
-	; current term (r10)
+%%computeSum2Loop: 
 	; denominator (r9) = 8 * k + j
 	mov rax, r8 
 	mul 8
@@ -180,26 +175,39 @@ powPix:
 	mov r9, rax
 	
 	mov rax, r11 ; numerator = current power of 16
+	xor rdx, rdx
 	div r9
 	mov r10, rax ; current term (r10) = numerator / denominator
 	
 	cmp r10, 0 ; if (current term == 0) break
-	je endComputeSjLoop2
+	je %%endComputeSum2Loop
 	
-	add rbp, r10 ; result += current term
+	add r12, r10 ; result += current term
 	
-	; increment exponent of the power of 16
+	; increment the exponent of current power of 16
 	divFractional 1, 16
 	mov r9, rax
 	mulAllFractional r11, r9 
 	mov r11, rax
 	
 	inc r8 ; ++k
-	jmp %%computeSjLoop2
-%%endComputeSjLoop2
+	jmp %%computeSum2Loop
+%%endComputeSum2Loop:
 	
-	pop %2
-	mov rax, rbp
+	mov rax, r12
+%endmacro
+
+
+; Computes {16^n * S_j} for the blue equation from the tutorial (see above).
+; %1 - j (64 bit)
+; %2 - n (64 bit)
+; rax (temporarily in r13) - result (64 bit)
+%macro computeSj 2
+	computeSum1 %1, %2
+	mov r13, rax ; result = sum1
+	computeSum2 %1, %2
+	add r13, rax ; result += sum2
+	mov rax, r13
 %endmacro
 
 
@@ -214,24 +222,16 @@ powPix:
 	
 	mov rax, [%2]
 	mul 8
-	mov rbx, rax
-	nthPi rbx ; nthPi(8 * m)
+	mov r15, rax ; n
+	nthPi r15 ; nthPi(8 * m)
 	
-	mov rbx, [%2]
 	rsh rax, 32 ; result >>= 32
-	mov [%1 + rbx], eax ; ppi[m] = result
+	mov r15, [%2]
+	mov [%1 + r15], eax ; ppi[m] = result
 	
 	inc [%2]
 %%endMainPixLoop:
 %endmacro
-
-
-; !!!
-; TODO: pododawaj na stos wartosci przy zagniezdzonych wywolaniach funkcji
-; i w innych potencjalnie niebezpiecznych miejscach
-
-
-
 
 
 
