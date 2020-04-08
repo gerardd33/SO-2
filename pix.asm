@@ -90,30 +90,6 @@ powPix:
 %endmacro
 
 
-; Computes {16^n * S_j} for the blue equation from the tutorial (see above).
-; %1 - j (64 bit)
-; %2 - n (64 bit)
-; rax - result (64 bit)
-%macro computeSj 3
-	push %2
-	xor rax, rax ; We'll store the result here
-	; ...
-	
-	xor r8, r8 ; k
-; for (k = 0; k <= n; ++k)
-%%computeSjLoop: 
-	cmp r8, %2 ; if (k == n) break
-	je %%endComputeSjLoop
-	
-	
-	jmp %%computeSjLoop
-%%endComputeSjLoop:
-
-	mov %3, rax
-	pop %2
-%endmacro
-
-
 ; Computes {16^n * pi} from the blue equation from the tutorial (see above).
 ; %1 - n (64 bit)
 ; rax - result (64 bit)
@@ -140,10 +116,80 @@ powPix:
 %endmacro
 
 
+; Computes {16^n * S_j} for the blue equation from the tutorial (see above).
+; %1 - j (64 bit)
+; %2 - n (64 bit)
+; rax (rbp for convenience) - result (64 bit)
+%macro computeSj 2
+	push %2
+	xor rbp, rbp ; result
+	
+	; first sum from the equation:
+	xor r8, r8 ; k
+	mov r11, %2 ; tmp (r11) := n - k
+	sub r11, r8
+	; for (k = 0; k <= n; ++k)
+%%computeSjLoop1: 
+	cmp r8, %2 ; if (k > n) break
+	ja %%endComputeSjLoop1
+	
+	; denominator (r9) = 8 * k + j
+	mov rax, r8 
+	mul 8
+	add rax, %1
+	mov r9, rax
+	
+	; numerator (r10) = 16 ^ (n - k) % denominator
+	power 16, r11, r9
+	mov r10, rax
+	
+	divFractional r10, r9
+	add rbp, rax ; result += { numerator / denominator }
+	
+	inc r8 ; ++k
+	jmp %%computeSjLoop1
+%%endComputeSjLoop1:
+	
+	; tmp (r11) := current power of 16
+	divFractional 1, 16
+	mov r11, rax
+	
+	; second sum from the equation:
+	; k = n + 1
+	mov r8, %2 
+	inc r8 
+%%computeSjLoop2: 
 
-
-
-
+	; current term (r10)
+	; denominator (r9) = 8 * k + j
+	mov rax, r8 
+	mul 8
+	add rax, %1
+	mov r9, rax
+	
+	mov rax, r11 ; numerator = current power of 16
+	div r9
+	mov r10, rax ; current term (r10) = numerator / denominator
+	
+	cmp r10, 0 ; if (current term == 0) break
+	je endComputeSjLoop2
+	
+	add rbp, r10 ; result += current term
+	
+	; increment exponent of the power of 16
+	divFractional 1, 16
+	mov r9, rax
+	mulAllFractional r11, r9 
+	mov r11, rax
+	
+	inc r8 ; ++k
+	jmp %%computeSjLoop2
+%%endComputeSjLoop2
+	
+	
+	pop %2
+	mov rax, rbp
+%endmacro
 
 
 
