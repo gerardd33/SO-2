@@ -18,7 +18,7 @@ section .text
 ; %1 - numerator (64 bit)
 ; %2 - denominator (64 bit)
 ; rax - result (64 bit)
-%macro divFractionalPart 2
+%macro divFractional 2
 	mov rax, %1
 	; We'll now consider numerator a 128-bit value on rdx:rax
 	mov rdx, rax ; numerator <<= 64 (*= 2 ^ 64)
@@ -45,6 +45,7 @@ section .text
 %macro power 3
 	mov rbx, %2 ; power
 	mov rax, 1 ; result = 1
+	xor rdx, rdx
 	
 %%powerLoop:
 	cmp rbx, 0 ; if (power == 0) break
@@ -74,6 +75,23 @@ powPix:
 	power rdi, rsi, rdx
 	pop rbx
 	ret
+
+
+; Computes { value1 * value2 }, where value1 and value 2 are also fractional parts.
+; %1 - value1 (64 bit)
+; %2 - valu2 (64 bit)
+; rax - result (64 bit)
+%macro mulAllFractional 2
+	mov rax, %1
+	xor rdx, rdx
+	; ??? czy na pewno tutaj 128 bit * 64 bit zadziala?? Ciolek ma 128 * 128; ale chyba powinno
+	mul %2
+	mov rax, rdx ; return the more significant part 
+%endmacro
+
+
+
+
 
 
 
