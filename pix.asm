@@ -122,9 +122,8 @@ section .text
 	cmp r8, %2 ; if (k > n) break
 	ja %%endComputeSum1Loop
 	
-	; denominator (r9) = 8 * k + j	
-	xor rax, rax
-	xor rdx, rdx
+	; denominator (r9) = 8 * k + j
+	mov rax, r8 
 	mov rbx, 8
 	mul rbx
 	add rax, %1
@@ -292,7 +291,6 @@ sum2Pix:
 	
 	
 pixPi:
-%ifdef COMMENT
 	push r14
 	push r13
 	push r12
@@ -304,7 +302,6 @@ pixPi:
 	pop r12
 	pop r13
 	pop r14
-%endif
 	ret
 
 
