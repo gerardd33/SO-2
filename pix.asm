@@ -19,9 +19,9 @@ section .text
 ; %2 - denominator (64 bit)
 ; rax - result (64 bit)
 %macro divFractional 2
-	mov rax, %1
 	; We'll now consider numerator a 128-bit value on rdx:rax
-	mov rdx, rax ; numerator <<= 64 (*= 2 ^ 64)
+	mov rdx, %1 ; numerator <<= 64 (*= 2 ^ 64)
+	xor rax, rax
 	div %2
 %endmacro
 
@@ -64,6 +64,7 @@ section .text
 	
 	shr %2, 1 ; power /= 2
 	jmp %%powerLoop
+	
 %%endPowerLoop:
 %endmacro
 
@@ -121,24 +122,31 @@ section .text
 	cmp r8, %2 ; if (k > n) break
 	ja %%endComputeSum1Loop
 	
-	; denominator (r9) = 8 * k + j
-	mov rax, r8 
+	; denominator (r9) = 8 * k + j	
+	xor rax, rax
+	xor rdx, rdx
 	mov rbx, 8
 	mul rbx
 	add rax, %1
 	mov r9, rax
 	
+	; TODO - zmien / zastap tego ifa
+	cmp r9, 2
+	jb %%skipSum1If
+	
 	; tmp (r11) := n - k
 	mov r11, %2
-	add r11, r8
+	sub r11, r8
 	
 	; numerator (r10) = 16 ^ (n - k) % denominator
 	mov rbp, 16
+	xor r10, r10
 	power rbp, r11, r9
 	mov r10, rax
 	
 	divFractional r10, r9
 	add r12, rax ; result += { numerator / denominator }
+%%skipSum1If:
 	
 	inc r8 ; ++k
 	jmp %%computeSum1Loop
@@ -265,7 +273,7 @@ sum1Pix:
 	push r12
 	push rbp
 	push rbx
-	computeSum1 rdi, rsi
+	computeSum1 rsi, rdi
 	pop rbx
 	pop rbp
 	pop r12
@@ -276,7 +284,7 @@ sum2Pix:
 	push r12
 	push rbp
 	push rbx
-	computeSum2 rdi, rsi
+	computeSum2 rsi, rdi
 	pop rbx
 	pop rbp
 	pop r12
@@ -284,6 +292,7 @@ sum2Pix:
 	
 	
 pixPi:
+%ifdef COMMENT
 	push r14
 	push r13
 	push r12
@@ -295,10 +304,11 @@ pixPi:
 	pop r12
 	pop r13
 	pop r14
+%endif
 	ret
 
 
-; TODO do wyjebonexa
+; TODO - wyrzuc te funkcje
 align 8
 pwPix:
 	ret
