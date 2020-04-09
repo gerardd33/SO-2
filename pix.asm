@@ -248,7 +248,6 @@ section .text
 
 
 
-
 powPix:
 %ifdef COMMENT
 	push r12
