@@ -95,7 +95,7 @@ section .text
 	add rax, %1
 	mov r9, rax
 	
-	cmp r9, 2
+	cmp r9, 2 ; if (denominator <= 1) continue
 	jb %%skipSum1If
 	
 	; tmp (r11) := n - k
