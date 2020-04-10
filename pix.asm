@@ -236,14 +236,12 @@ section .text
 	mov r8, 8
 	mul r8
 	mov r15, rax ; n
-	;nthPi r15 ; nthPi(8 * m)
-	;shr rax, 32 ; result >>= 32
+	nthPi r15 ; nthPi(8 * m)
+	shr rax, 32 ; result >>= 32
 	
 	; write the computed value to the ppi array
-	mov r15, rbx
-	mov eax, [%1 + r15] ; TODO: usun
-	inc eax
-	mov [%1 + r15], eax ; ppi[m] = result
+	mov eax, 1
+	mov [%1 + 4 * rbx], eax ; ppi[m] = result
 	jmp %%mainPixLoop
 %%endMainPixLoop:
 %endmacro
@@ -255,11 +253,6 @@ section .text
 
 ; TODO - wyrzuc funkcje
 pwPix:
-	;push rdi
-	;rdtsc
-	;mov rdi, rax
-	;call pixtime
-	;pop rdi
 	push rbx
 	push rbp
 	push r15
@@ -270,12 +263,11 @@ pwPix:
 	pop rbx
 	ret
 	
-align 8 ; TODO: usun jak bedzie dzialac bez
+	
 pix:
 	ret
-
-
-
+	
+	
 powPix:
 	push r12
 	mov r12, rdx
