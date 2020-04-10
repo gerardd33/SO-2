@@ -223,18 +223,18 @@ section .text
 	mov r8, 8
 	mul r8
 	mov r15, rax ; n
+	push rbx
 	nthPi r15 ; nthPi(8 * m)
+	pop rbx
 	shr rax, 32 ; result >>= 32
 	
 	; write the computed value to the ppi array
-	mov eax, 1
 	mov [%1 + 4 * rbx], eax ; ppi[m] = result
 	jmp %%mainPixLoop
 %%endMainPixLoop:
 %endmacro
 
 
-align 8
 pix:
 	push r15
 	push r14
@@ -259,6 +259,11 @@ pix:
 	
 	mov rbp, rdx
 	mainPix rdi, rsi, rbp
+	
+	; call pixtime - stack aligned
+	rdtsc
+	mov rdi, rax
+	call pixtime
 	
 	pop rbx
 	pop rbp
