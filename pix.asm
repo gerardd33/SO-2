@@ -1,5 +1,5 @@
-extern pixtime
 global pix
+extern pixtime
 
 section .text
 
@@ -33,12 +33,12 @@ section .text
 	modulo %3 ; result (rdx:rax) %= modulus }
 %%skipPowerIf: 
 
-	push rax ; store result temporarily
+	push rax
 	mov rax, %1
 	mul %1 ; value (now on rdx:rax) = value * value 
 	modulo %3 ; value (rdx:rax) %= modulus
 	mov %1, rax
-	pop rax ; retrieve result
+	pop rax
 	
 	shr %2, 1 ; power /= 2
 	jmp %%powerLoop
@@ -70,6 +70,9 @@ section .text
 	mov rax, rdx ; return the more significant part 
 %endmacro
 
+
+; Most equations in the following code taken from: 
+; https://math.stackexchange.com/questions/880904/how-do-you-use-the-bbp-formula-to-calculate-the-nth-digit-of-%CF%80 ; - referred to as "tutorial" below.
 
 ; Computes the first sum from the equation for Sj (see above).
 ; %1 - j (64 bit)
