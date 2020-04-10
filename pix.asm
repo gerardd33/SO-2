@@ -3,21 +3,10 @@ global pix
 
 section .text
 
-; Computes { numerator / denominator }.
-; %1 - numerator (64 bit)
-; %2 - denominator (64 bit)
-; rax - result (64 bit)
-%macro divFractional 2
-	; we'll now consider numerator a 128-bit value on rdx:rax
-	mov rdx, %1 ; numerator <<= 64 (*= 2 ^ 64)
-	xor rax, rax
-	div %2
-%endmacro
-
 
 ; Calculates value % modulus. 
 ; rdx:rax - value (128 bit) OR rax - value (64 bit) -
-; - in the latter case, do "xor rdx, rdx" before using the function
+; - in the latter case, do "xor edx, edx" before using the function
 ; %1 - modulus (64 bit)
 ; rax - result (64 bit)
 %macro modulo 1
@@ -58,41 +47,27 @@ section .text
 %endmacro
 
 
+; Computes { numerator / denominator }.
+; %1 - numerator (64 bit)
+; %2 - denominator (64 bit)
+; rax - result (64 bit)
+%macro divFractional 2
+	; we'll now consider numerator a 128-bit value on rdx:rax
+	mov rdx, %1 ; numerator <<= 64 (*= 2 ^ 64)
+	xor eax, eax
+	div %2
+%endmacro
+
+
 ; Computes { value1 * value2 }, where value1 and value 2 are also fractional parts.
 ; %1 - value1 (64 bit)
 ; %2 - value2 (64 bit)
 ; rax - result (64 bit)
 %macro mulAllFractional 2
 	mov rax, %1
-	xor rdx, rdx
+	xor edx, edx
 	mul %2
 	mov rax, rdx ; return the more significant part 
-%endmacro
-
-
-; Computes {16^n * pi} from the blue equation from the tutorial (see above).
-; %1 - n (64 bit)
-; rax (temporarily in r14) - result (64 bit)
-%macro nthPi 1
-	xor r14, r14 ; result = 0
-	
-	computeSj 1, %1 ; S1
-	mov rbx, 4
-	mul rbx
-	add r14, rax ; result += 4 * S1
-	
-	computeSj 4, %1 ; S4
-	mov rbx, 2
-	mul rbx
-	sub r14, rax ; result -= 2 * S4
-	
-	computeSj 5, %1 ; S5
-	sub r14, rax ; result -= S6
-	
-	computeSj 6, %1 ; S6
-	sub r14, rax ; result -= S6	
-	
-	mov rax, r14
 %endmacro
 
 
@@ -167,7 +142,7 @@ section .text
 	mov r9, rax
 	
 	mov rax, r11 ; numerator = current power of 16
-	xor rdx, rdx
+	xor edx, edx
 	div r9
 	mov r10, rax ; current term (r10) = numerator / denominator
 	
@@ -204,6 +179,32 @@ section .text
 %endmacro
 
 
+; Computes {16^n * pi} from the blue equation from the tutorial (see above).
+; %1 - n (64 bit)
+; rax (temporarily in r14) - result (64 bit)
+%macro nthPi 1
+	xor r14, r14 ; result = 0
+	
+	computeSj 1, %1 ; S1
+	mov rbx, 4
+	mul rbx
+	add r14, rax ; result += 4 * S1
+	
+	computeSj 4, %1 ; S4
+	mov rbx, 2
+	mul rbx
+	sub r14, rax ; result -= 2 * S4
+	
+	computeSj 5, %1 ; S5
+	sub r14, rax ; result -= S6
+	
+	computeSj 6, %1 ; S6
+	sub r14, rax ; result -= S6	
+	
+	mov rax, r14
+%endmacro
+
+
 ; Main function. Writes to the array.
 ; %1 - Pointer to the ppi array (32 bit*)
 ; %2 - Pointer to the pidx index (64 bit*)
@@ -212,7 +213,7 @@ section .text
 %%mainPixLoop:
 	; increment the pidx pointer (atomic)
 	mov rbx, 1
-	lock xadd [%2], rbx 
+	lock xadd qword [%2], rbx 
 	; the old value of *pidx is now in rbx, which we'll use from now on
 	
 	cmp rbx, %3 ; if (*pidx >= max) break
@@ -229,7 +230,7 @@ section .text
 	shr rax, 32 ; result >>= 32
 	
 	; write the computed value to the ppi array
-	mov [%1 + 4 * rbx], eax ; ppi[m] = result
+	mov dword [%1 + 4 * rbx], eax ; ppi[m] = result
 	jmp %%mainPixLoop
 %%endMainPixLoop:
 %endmacro
