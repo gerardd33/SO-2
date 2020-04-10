@@ -247,83 +247,21 @@ section .text
 %endmacro
 
 
-
-
-
-
-; TODO - wyrzuc funkcje
-pwPix:
-	push rbx
-	push rbp
-	push r15
-	mov rbp, rdx
-	mainPix rdi, rsi, rbp
-	pop r15
-	pop rbp
-	pop rbx
-	ret
-	
-	
 pix:
-	ret
-	
-	
-powPix:
-	push r12
-	mov r12, rdx
-	power rdi, rsi, r12
-	pop r12
-	ret
-	
-	
-modPix:
-	xor rdx, rdx
-	mov rax, rdi
-	modulo rsi
-	ret
-	
-	
-sum1Pix:
-	push r12
-	push rbp
-	push rbx
-	computeSum1 rsi, rdi
-	pop rbx
-	pop rbp
-	pop r12
-	ret
-	
-	
-sum2Pix:
-	push r12
-	push rbp
-	push rbx
-	computeSum2 rsi, rdi
-	pop rbx
-	pop rbp
-	pop r12
-	ret
-	
-	
-pixPi:
+	push r15
 	push r14
 	push r13
 	push r12
 	push rbp
 	push rbx
-	nthPi rdi
+	
+	mov rbp, rdx
+	mainPix rdi, rsi, rbp
+	
 	pop rbx
 	pop rbp
 	pop r12
 	pop r13
 	pop r14
+	pop r15
 	ret
-	
-	
-
-
-
-
-
-
-
