@@ -72,7 +72,8 @@ section .text
 
 
 ; Most equations in the following code taken from: 
-; https://math.stackexchange.com/questions/880904/how-do-you-use-the-bbp-formula-to-calculate-the-nth-digit-of-%CF%80 ; - referred to as "tutorial" below.
+; https://math.stackexchange.com/questions/880904/how-do-you-use-the-bbp-formula-to-calculate-the-nth-digit-of-%CF%80 
+; referred to as "the tutorial" below.
 
 ; Computes the first sum from the equation for Sj (see above).
 ; %1 - j (64 bit)
