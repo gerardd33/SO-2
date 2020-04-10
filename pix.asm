@@ -246,12 +246,10 @@ pix:
 	push rsi
 	push rdx
 	
-	; call pixtime
-	sub rsp, 12 ; aligning the stack
+	; call pixtime - stack aligned
 	rdtsc
 	mov rdi, rax
 	call pixtime
-	add rsp, 12 ; aligning the stack
 	
 	pop rdx
 	pop rsi
@@ -260,10 +258,12 @@ pix:
 	mov rbp, rdx
 	mainPix rdi, rsi, rbp
 	
-	; call pixtime - stack aligned
+	; call pixtime
+	sub rsp, 8 ; aligning the stack
 	rdtsc
 	mov rdi, rax
 	call pixtime
+	add rsp, 8 ; aligning the stack
 	
 	pop rbx
 	pop rbp
