@@ -129,7 +129,6 @@ section .text
 	add rax, %1
 	mov r9, rax
 	
-	; TODO - zmien / zastap tego ifa
 	cmp r9, 2
 	jb %%skipSum1If
 	
@@ -138,10 +137,12 @@ section .text
 	sub r11, r8
 	
 	; numerator (r10) = 16 ^ (n - k) % denominator
+	push rbp
 	mov rbp, 16
 	xor r10, r10
 	power rbp, r11, r9
 	mov r10, rax
+	pop rbp
 	
 	divFractional r10, r9
 	add r12, rax ; result += { numerator / denominator }
@@ -222,20 +223,28 @@ section .text
 ; %3 - The max value (64 bit)
 %macro mainPix 3
 %%mainPixLoop:
-	cmp [%2], %3 ; if (*pidx >= max) break
+	; increment the pidx pointer (atomic)
+	mov rbx, 1
+	lock xadd [%2], rbx 
+	; the old value of *pidx is now in rbx, which we'll use from now on
+	
+	cmp rbx, %3 ; if (*pidx >= max) break
 	jae %%endMainPixLoop
 	
-	mov rax, [%2]
-	mov rbx, 8
-	mul rbx
+	; n = 8 * m
+	mov rax, rbx
+	mov r8, 8
+	mul r8
 	mov r15, rax ; n
-	nthPi r15 ; nthPi(8 * m)
+	;nthPi r15 ; nthPi(8 * m)
+	;shr rax, 32 ; result >>= 32
 	
-	rsh rax, 32 ; result >>= 32
-	mov r15, [%2]
+	; write the computed value to the ppi array
+	mov r15, rbx
+	mov eax, [%1 + r15] ; TODO: usun
+	inc eax
 	mov [%1 + r15], eax ; ppi[m] = result
-	
-	inc [%2]
+	jmp %%mainPixLoop
 %%endMainPixLoop:
 %endmacro
 
@@ -244,26 +253,41 @@ section .text
 
 
 
-
+; TODO - wyrzuc funkcje
+pwPix:
+	;push rdi
+	;rdtsc
+	;mov rdi, rax
+	;call pixtime
+	;pop rdi
+	push rbx
+	push rbp
+	push r15
+	mov rbp, rdx
+	mainPix rdi, rsi, rbp
+	pop r15
+	pop rbp
+	pop rbx
+	ret
+	
+align 8 ; TODO: usun jak bedzie dzialac bez
+pix:
+	ret
 
 
 
 powPix:
-%ifdef COMMENT
 	push r12
 	mov r12, rdx
 	power rdi, rsi, r12
 	pop r12
-%endif
 	ret
 	
 	
 modPix:
-%ifdef COMMENT
 	xor rdx, rdx
 	mov rax, rdi
 	modulo rsi
-%endif
 	ret
 	
 	
@@ -302,22 +326,8 @@ pixPi:
 	pop r13
 	pop r14
 	ret
-
-
-; TODO - wyrzuc te funkcje
-align 8
-pwPix:
-	ret
-; rdi - wskaznik na tablice
-; rsi - wskaznik na indeks
-; rdx - wartosc max
-
-align 8 ; TODO: usun jak bedzie dzialac bez
-pix:
-	ret
-
-
-
+	
+	
 
 
 
