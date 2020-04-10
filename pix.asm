@@ -234,6 +234,7 @@ section .text
 %endmacro
 
 
+align 8
 pix:
 	push r15
 	push r14
@@ -241,6 +242,20 @@ pix:
 	push r12
 	push rbp
 	push rbx
+	push rdi
+	push rsi
+	push rdx
+	
+	; call pixtime
+	sub rsp, 12 ; aligning the stack
+	rdtsc
+	mov rdi, rax
+	call pixtime
+	add rsp, 12 ; aligning the stack
+	
+	pop rdx
+	pop rsi
+	pop rdi
 	
 	mov rbp, rdx
 	mainPix rdi, rsi, rbp
