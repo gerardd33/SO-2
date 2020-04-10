@@ -1,16 +1,5 @@
-global modPix
-global powPix
-global sum1Pix
-global sum2Pix
-global pixPi
-global pwPix
-
 extern pixtime
 global pix
-
-
-
-
 
 section .text
 
@@ -76,7 +65,6 @@ section .text
 %macro mulAllFractional 2
 	mov rax, %1
 	xor rdx, rdx
-	; ??? czy na pewno tutaj 128 bit * 64 bit zadziala?? Ciolek ma 128 * 128; ale chyba powinno
 	mul %2
 	mov rax, rdx ; return the more significant part 
 %endmacro
@@ -86,7 +74,6 @@ section .text
 ; %1 - n (64 bit)
 ; rax (temporarily in r14) - result (64 bit)
 %macro nthPi 1
-	; ??? Co tutaj z wychodzeniem ponizej zera i powyzej overflowa?
 	xor r14, r14 ; result = 0
 	
 	computeSj 1, %1 ; S1
